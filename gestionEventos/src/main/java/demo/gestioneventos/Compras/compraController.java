@@ -1,6 +1,7 @@
 package demo.gestioneventos.Compras;
 
 import demo.gestioneventos.Eventos.Evento;
+import demo.gestioneventos.gestionCompras;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
@@ -16,19 +17,25 @@ import java.util.List;
 @RestController
 @RequestMapping("/compras")
 public class compraController {
-    compraRepository compraRepository;
+    gestionCompras gestionCompras = new gestionCompras();
+
 
     @Autowired
-    public compraController(compraRepository compraRepository) {
-        this.compraRepository = compraRepository;
+    public compraController(demo.gestioneventos.gestionCompras gestionCompras) {
+        this.gestionCompras = gestionCompras;
     }
+
+    public compraController() {
+    }
+
+
+
 
     //GET --> SELECT *
     @GetMapping("/getCompras")
     public ResponseEntity<List<Compra>> getCompras() {
-        List<Compra> lista = this.compraRepository.findAll();
-        System.out.println(lista);
-        return ResponseEntity.ok(lista);
+
+        return ResponseEntity.ok(gestionCompras.getCompras());
     }
 
 
@@ -36,15 +43,13 @@ public class compraController {
     @GetMapping("/{id}")
     @Cacheable
     public ResponseEntity<Compra> getCompraJSon(@PathVariable int id) {
-        Compra c = this.compraRepository.findById(id).get();
-        return ResponseEntity.ok(c);
+        return ResponseEntity.ok(gestionCompras.getCompraById(id));
     }
 
     //POST de un Objeto compra
-    @PostMapping("/compra")
-    public ResponseEntity<Compra> addUsuario(@Valid @RequestBody Compra compra) {
-        Compra persistedCompra = this.compraRepository.save(compra);
-        return ResponseEntity.ok().body(persistedCompra);
+    @PostMapping("/comprar")
+    public ResponseEntity<Compra> addCompra(@Valid @RequestBody Compra compra) {
+        return ResponseEntity.ok().body(gestionCompras.comprarEntradas(compra));
     }
 
     //POST con Form Normal
@@ -58,37 +63,27 @@ public class compraController {
             @RequestParam Evento idEvento
 
     ) {
-        Compra compra = new Compra();
-        compra.setDni(dni);
-        compra.setNombre(nombre);
-        compra.setApellidos(apellido);
-        compra.setFechaCompra(fecha_compra);
-        compra.setNumeroTarjeta(tarjeta);
-        compra.setIdEvento(idEvento);
-        this.compraRepository.save(compra);
-        return ResponseEntity.created(null).body(compra);
+
+        return ResponseEntity.created(null).body(gestionCompras.comprarEntradasParameters(dni,nombre,apellido,fecha_compra,tarjeta,idEvento));
     }
 
     //PUT --> UPDATE
-    @PutMapping("/{id}")
+    @PutMapping("/update{id}")
     public ResponseEntity<Compra> updateCompra(@PathVariable int id, @RequestBody Compra compra) {
         //Verificar si el usuario existe
-        if (!compraRepository.existsById(id)) {
+        if (!gestionCompras.getCompras().contains(id)) {
             return ResponseEntity.notFound().build();
         }
 
         //Asegurarse de que el id recibido coincide con el id del usuario
         compra.setId(id);
-
-        //Guardar el usuario actualizado
-        Compra persistedCompra = compraRepository.save(compra);
-        return ResponseEntity.ok().body(persistedCompra);
+        return ResponseEntity.ok().body(gestionCompras.updateCompra(compra));
     }
 
     //DELETE
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete{id}")
     public ResponseEntity<String> deleteCompra(@PathVariable int id) {
-        compraRepository.deleteById(id);
+        gestionCompras.deleteCompra(id);
         String mensaje = "Compra con id: " + id + " eliminada";
         return ResponseEntity.ok().body(mensaje);
     }
